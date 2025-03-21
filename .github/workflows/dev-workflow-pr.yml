@@ -1,0 +1,38 @@
+name: Dev Workflow PR
+
+on:
+    [workflow_dispatch]
+
+env:
+    REPO_NAME: "${{ github.repository }}"
+    BRANCH_BASE: dev
+    BRANCH_HEAD: ${{ github.ref_name }}
+
+jobs:
+    feature-pr:
+        permissions: write-all
+        name: Feature Branch Pull Request
+        runs-on: self-hosted
+        timeout-minutes: 5
+
+        steps:
+        -   name: Checkout Repository
+            uses: actions/checkout@v4
+
+        -   name: Verify Latest Changes Pulled
+            env:
+                GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+            run: |
+                mrgbase="$(gh api /repos/${{ env.REPO_NAME }}/compare/$BRANCH_HEAD...$BRANCH_BASE --jq '.merge_base_commit.sha')"
+                latest="$(gh api /repos/${{ env.REPO_NAME }}/commits/$BRANCH_BASE --jq '.sha')"
+
+                if [[ "$mrgbase" != "$latest" ]]; then
+                    echo "Feature branch is outdated!"
+                    echo "Run: git pull origin dev"
+                    exit 1
+                fi
+
+        -   name: Create pull request to DEV
+            env:
+                GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+            run: gh pr create -r "${{ vars.FEATURE_PR_APPROVER }}" -B ${{ env.BRANCH_BASE }} -H ${{ env.BRANCH_HEAD }} --title 'Merge feature branch into DEV branch' --body 'Auto-created by workflow'
