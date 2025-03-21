@@ -14,7 +14,7 @@ env:
 jobs:
   check-up-to-date:
     name: Ensure Feature Branch is Up-to-Date with dev
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository

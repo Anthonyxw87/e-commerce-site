@@ -12,7 +12,7 @@ jobs:
     feature-pr:
         permissions: write-all
         name: Feature Branch Pull Request
-        runs-on: self-hosted
+        runs-on: ubuntu-latest
         timeout-minutes: 5
 
         steps:
