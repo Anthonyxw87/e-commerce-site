@@ -59,7 +59,7 @@ jobs:
             -   name: Close Pull (always, fail/success)
                 env:
                     PR_NUMBER: ${{ github.event.pull_request.number }}
-                    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                    GH_TOKEN: ${{ secrets.PAT_TOKEN }}
                 if: failure()
                 run: |
                     echo "PR closed due to error. See action logs for details."
@@ -68,5 +68,5 @@ jobs:
             -   name: Create pull request to PRD
                 if: success()
                 env:
-                    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                    GH_TOKEN: ${{ secrets.PAT_TOKEN }}
                 run: gh pr create -r ${{ vars.FEATURE_PR_APPROVER }} -B prd -H dev --title 'Merge DEV branch into PRD branch' --body 'Auto-created by workflow'
