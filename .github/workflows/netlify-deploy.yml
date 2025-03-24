@@ -1,0 +1,60 @@
+name: Deploy to Netlify (Manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy_target:
+        description: 'Deploy to Netlify environment'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - preview
+          - production
+
+env:
+  BUILD_DIR: build
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 23
+          cache: 'npm'
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli@19.0.3
+
+      - name: Install Dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build Project
+        working-directory: frontend
+        run: npm run build
+
+      - name: Deploy to Netlify
+        id: netlify_deploy
+        run: |
+          DEPLOY_CMD="netlify deploy --dir $BUILD_DIR --site ${{ secrets.NETLIFY_SITE_ID }} --auth ${{ secrets.NETLIFY_API_TOKEN }}"
+
+          if [[ "${{ github.event.inputs.deploy_target }}" == "production" ]]; then
+            DEPLOY_CMD="$DEPLOY_CMD --prod"
+          else
+            DEPLOY_CMD="$DEPLOY_CMD --json > deploy_output.json"
+          fi
+
+          echo "Running: $DEPLOY_CMD"
+          eval $DEPLOY_CMD
+
+      - name: Show Preview URL (if preview)
+        if: ${{ github.event.inputs.deploy_target == 'preview' }}
+        run: |
+          echo "Preview URL:"
+          cat deploy_output.json | jq -r '.deploy_url'
