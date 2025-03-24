@@ -1,0 +1,34 @@
+name: Feature Push Workflow
+
+on:
+  push:
+    branches-ignore:
+      - dev
+      - prd
+
+env:
+  REPO_NAME: "${{ github.repository }}"
+  BRANCH_BASE: dev
+  BRANCH_HEAD: ${{ github.ref_name }}
+
+jobs:
+  check-up-to-date:
+    name: Ensure Feature Branch is Up-to-Date with dev
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Verify Latest Changes Pulled
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mrgbase="$(gh api /repos/${{ env.REPO_NAME }}/compare/$BRANCH_HEAD...$BRANCH_BASE --jq '.merge_base_commit.sha')"
+          latest="$(gh api /repos/${{ env.REPO_NAME }}/commits/$BRANCH_BASE --jq '.sha')"
+
+          if [[ "$mrgbase" != "$latest" ]]; then
+              echo "Feature branch is outdated!"
+              echo "Run: git pull origin dev"
+              exit 1
+          fi
