@@ -32,9 +32,11 @@ jobs:
         run: npm install -g netlify-cli@19.0.3
 
       - name: Install Dependencies
+        working-directory: frontend
         run: npm ci
 
       - name: Build Project
+        working-directory: frontend
         run: npm run build
 
       - name: Deploy to Netlify
