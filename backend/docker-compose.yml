@@ -1,0 +1,11 @@
+services:
+  backend:
+    build: .
+    container_name: e-commerce-backend-server
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/app
+    environment:
+      - FLASK_ENV=development
+    restart: always
