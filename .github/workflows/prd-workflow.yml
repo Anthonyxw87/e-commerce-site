@@ -1,0 +1,56 @@
+name: PRD Workflow
+
+on:
+  pull_request:
+    types: [locked]
+  pull_request_review:
+    types: [submitted]
+
+env:
+  REPO_NAME: "${{ github.repository }}"
+  BRANCH_BASE: dev
+  BRANCH_HEAD: ${{ github.ref_name }}
+
+jobs:
+  prd:
+    if: startsWith(github.event.pull_request.base.ref, 'prd')
+    permissions: write-all
+    name: Deploy to PRD
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+
+      - name: Merge DEV -> PRD
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh pr merge $PR_NUMBER --body "Merging DEV -> PRD..." --merge
+
+      - name: Repo Checkout (back to DEV)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Git pull from prd branch to align history, push back to dev origin
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git branch -a
+          git status
+          git pull origin dev
+          git push
+          git status
+
+      - name: Close Pull Request (always, fail/success)
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        if: failure()
+        run: |
+          echo "PR closed due to error. See action logs for details."
+          gh pr close $PR_NUMBER --comment "Auto-closing pull request"

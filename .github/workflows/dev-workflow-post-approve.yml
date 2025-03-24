@@ -11,12 +11,12 @@ env:
     BRANCH_HEAD: ${{ github.ref_name }}
 
 jobs:
-    prd:
+    dev:
         if: startsWith(github.event.pull_request.base.ref, 'dev')
         permissions: write-all
         name: Deploy to DEV
         runs-on: ubuntu-latest
-        timeout-minutes: 30
+        timeout-minutes: 10
 
         steps:
             -   name: Checkout Repository
