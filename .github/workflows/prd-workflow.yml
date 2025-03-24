@@ -34,7 +34,7 @@ jobs:
       - name: Repo Checkout (back to DEV)
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.head.ref }}
+          ref: dev
 
       - name: Git pull from prd branch to align history, push back to dev origin
         env:
