@@ -4,6 +4,15 @@ on:
   push:
     branches:
       - dev
+  pull_request:
+      types: [locked]
+  pull_request_review:
+      types: [submitted]
+
+env:
+    REPO_NAME: "${{ github.repository }}"
+    BRANCH_BASE: dev
+    BRANCH_HEAD: ${{ github.ref_name }}
 
 jobs:
   build-and-push:
