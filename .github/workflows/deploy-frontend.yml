@@ -1,13 +1,7 @@
 name: Build & Push Frontend to Docker Hub Dev
 
 on:
-  push:
-    branches:
-      - dev
-  pull_request:
-      types: [locked]
-  pull_request_review:
-      types: [submitted]
+    [workflow_dispatch]
 
 env:
     REPO_NAME: "${{ github.repository }}"
