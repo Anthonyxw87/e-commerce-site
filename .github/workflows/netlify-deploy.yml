@@ -34,8 +34,9 @@ jobs:
 
       - name: Install Dependencies
         working-directory: ./frontend
-        run: npm install --package-lock-only
-        run: npm ci
+        run: |
+          npm install --package-lock-only
+          npm ci
 
       - name: Build Project
         working-directory: ./frontend
