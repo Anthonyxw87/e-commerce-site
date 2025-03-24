@@ -8,7 +8,7 @@ on:
 
 env:
   REPO_NAME: "${{ github.repository }}"
-  BRANCH_BASE: dev
+  BRANCH_BASE: prd
   BRANCH_HEAD: ${{ github.ref_name }}
 
 jobs:
@@ -34,7 +34,7 @@ jobs:
       - name: Repo Checkout (back to DEV)
         uses: actions/checkout@v4
         with:
-          ref: dev
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Git pull from prd branch to align history, push back to dev origin
         env:
@@ -42,7 +42,7 @@ jobs:
         run: |
           git branch -a
           git status
-          git pull origin dev
+          git pull origin prd
           git push
           git status
 
