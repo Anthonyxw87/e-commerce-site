@@ -1,29 +1,30 @@
 name: Build & Push Backend to Docker Hub
 
 on:
-  workflow_dispatch:
-    inputs:
-      branch:
-        description: 'Git branch to deploy (e.g., dev or prd)'
-        required: true
+  pull_request:
+    types: [locked]
+  pull_request_review:
+    types: [submitted]
 
 env:
   REPO_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
+    if: github.event.pull_request.base.ref == 'dev' || github.event.pull_request.base.ref == 'prd'
     runs-on: ubuntu-latest
 
     steps:
       - name: Set environment variables
         id: vars
         run: |
-          if [ "${{ github.event.inputs.branch }}" = "prd" ]; then
+          BRANCH="${{ github.event.pull_request.base.ref }}"
+          if [ "$BRANCH" = "prd" ]; then
             echo "tag=latest" >> $GITHUB_OUTPUT
           else
             echo "tag=dev" >> $GITHUB_OUTPUT
           fi
-          echo "branch=${{ github.event.inputs.branch }}" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
       - name: Checkout code
         uses: actions/checkout@v4
