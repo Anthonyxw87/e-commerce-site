@@ -80,3 +80,4 @@ jobs:
                     -H "Accept: application/vnd.github+json" \
                     -H "Authorization: token $GH_TOKEN" \
                     -d '{"event_type": "trigger-backend-deploy", "client_payload": { "branch": "prd" }}'
+
