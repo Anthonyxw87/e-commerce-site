@@ -81,3 +81,12 @@ jobs:
                     -H "Authorization: token $GH_TOKEN" \
                     -d '{"event_type": "trigger-backend-deploy", "client_payload": { "branch": "dev" }}'
 
+            -   name: Trigger Frontend Deploy Workflow
+                if: success()
+                env:
+                    GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+                run: |
+                    curl -X POST https://api.github.com/repos/${{ github.repository }}/dispatches \
+                    -H "Accept: application/vnd.github+json" \
+                    -H "Authorization: token $GH_TOKEN" \
+                    -d '{"event_type": "trigger-frontend-deploy", "client_payload": { "branch": "dev" }}'
