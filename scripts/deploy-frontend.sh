@@ -21,12 +21,21 @@ else
 fi
 
 # Check if new image is different from the currently running one
-if [ "$CONTAINER_EXISTS" = false ] || [ "$(docker inspect --format='{{.Id}}' $IMAGE_NAME)" != "$(docker inspect --format='{{.Image}}' $CONTAINER_NAME 2>/dev/null)" ]; then
+CURRENT_IMAGE_ID=$(docker inspect --format='{{.Id}}' "$IMAGE_NAME" 2>/dev/null)
+RUNNING_IMAGE_ID=$(docker inspect --format='{{.Image}}' "$CONTAINER_NAME" 2>/dev/null)
+
+if [ "$CONTAINER_EXISTS" = false ] || [ "$CURRENT_IMAGE_ID" != "$RUNNING_IMAGE_ID" ]; then
   echo "[$(date)] New image detected or container does not exist. Restarting $CONTAINER_NAME..." >> "$LOG_FILE"
 
   if [ "$CONTAINER_EXISTS" = true ]; then
     docker stop "$CONTAINER_NAME" >> "$LOG_FILE" 2>&1
     docker rm "$CONTAINER_NAME" >> "$LOG_FILE" 2>&1
+
+    # Remove old image used by container (if different from current)
+    if [ "$RUNNING_IMAGE_ID" != "" ] && [ "$CURRENT_IMAGE_ID" != "$RUNNING_IMAGE_ID" ]; then
+      docker rmi "$RUNNING_IMAGE_ID" >> "$LOG_FILE" 2>&1
+      echo "[$(date)] Old image removed: $RUNNING_IMAGE_ID" >> "$LOG_FILE"
+    fi
   fi
 
   docker run -d --name "$CONTAINER_NAME" -p 3000:3000 "$IMAGE_NAME" >> "$LOG_FILE" 2>&1
