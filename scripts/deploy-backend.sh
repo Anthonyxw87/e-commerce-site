@@ -48,7 +48,7 @@ if [ "$CONTAINER_EXISTS" = false ] || [ "$CURRENT_IMAGE_ID" != "$RUNNING_IMAGE_I
     fi
   fi
 
-  docker run -d --name "$CONTAINER_NAME" -p "$PORT:$PORT" "$IMAGE_NAME" >> "$LOG_FILE" 2>&1
+  docker run -d --name "$CONTAINER_NAME" -p "$PORT:$PORT" -e ENV="$ENV" "$IMAGE_NAME" >> "$LOG_FILE" 2>&1
 else
   echo "[$(date)] Image is up to date. No changes." >> "$LOG_FILE"
 fi
