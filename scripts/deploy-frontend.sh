@@ -29,7 +29,7 @@ if [ "$CONTAINER_EXISTS" = false ] || [ "$(docker inspect --format='{{.Id}}' $IM
     docker rm "$CONTAINER_NAME" >> "$LOG_FILE" 2>&1
   fi
 
-  docker run -d --name "$CONTAINER_NAME" "$IMAGE_NAME" >> "$LOG_FILE" 2>&1
+  docker run -d --name "$CONTAINER_NAME" "$IMAGE_NAME" -p 5000:5000 >> "$LOG_FILE" 2>&1
 else
   echo "[$(date)] Image is up to date. No changes." >> "$LOG_FILE"
 fi
