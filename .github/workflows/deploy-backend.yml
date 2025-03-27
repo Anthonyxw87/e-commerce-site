@@ -4,13 +4,8 @@ on:
   workflow_dispatch:
     inputs:
       branch:
-        description: 'Branch to deploy (dev or prd)'
+        description: 'Git branch to deploy (e.g., dev or prd)'
         required: true
-        default: 'dev'
-        type: choice
-        options:
-          - dev
-          - prd
 
 env:
   REPO_NAME: ${{ github.repository }}
