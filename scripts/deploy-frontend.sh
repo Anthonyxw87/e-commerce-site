@@ -1,22 +1,15 @@
 #!/bin/bash
 
-ENV="${ENV:-dev}"  # default to dev if ENV is not set
+ENV="dev"  # Only dev environment is supported
 
 # === CONFIG ===
-if [ "$ENV" == "dev" ]; then
-  IMAGE_TAG="dev"
-  LOG_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/logs/deploy-backend-dev.log"
-  CONTAINER_NAME="e-commerce-backend-dev"
-else
-  IMAGE_TAG="prd"
-  LOG_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/logs/deploy-backend-prd.log"
-  CONTAINER_NAME="e-commerce-backend-prd"
-fi
-
-IMAGE_NAME="anthonyxw87/e-commerce-backend:$IMAGE_TAG"
+IMAGE_TAG="dev"
+LOG_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/logs/deploy-frontend-dev.log"
+CONTAINER_NAME="e-commerce-frontend-dev"
+IMAGE_NAME="anthonyxw87/e-commerce-frontend:$IMAGE_TAG"
 
 # === DEPLOY LOGIC ===
-echo "[$(date)] Checking for new image for environment: $ENV" >> "$LOG_FILE"
+echo "[$(date)] Checking for new frontend image for environment: $ENV" >> "$LOG_FILE"
 
 docker pull "$IMAGE_NAME" >> "$LOG_FILE" 2>&1
 
