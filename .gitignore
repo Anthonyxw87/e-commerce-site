@@ -1,5 +1,7 @@
 frontend/.env
+ backend/.env
 frontend/node_modules
 backend/venv
 .netlify
 logs/
+scripts/.env
