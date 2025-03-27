@@ -8,7 +8,7 @@ if [ "$ENV" == "dev" ]; then
   LOG_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/logs/deploy-backend-dev.log"
   CONTAINER_NAME="e-commerce-backend-dev"
 else
-  IMAGE_TAG="latest"  # or "prd"
+  IMAGE_TAG="prd"
   LOG_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/logs/deploy-backend-prd.log"
   CONTAINER_NAME="e-commerce-backend-prd"
 fi
