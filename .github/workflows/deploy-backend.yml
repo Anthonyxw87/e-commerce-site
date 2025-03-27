@@ -1,24 +1,22 @@
 name: Build & Push Backend to Docker Hub
 
 on:
-  pull_request:
-    types: [locked]
-  pull_request_review:
-    types: [submitted]
+  repository_dispatch:
+    types: [trigger-backend-deploy]
 
 env:
   REPO_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
-    if: github.event.pull_request.base.ref == 'dev' || github.event.pull_request.base.ref == 'prd'
+    if: github.event.client_payload.branch == 'dev' || github.event.client_payload.branch == 'prd'
     runs-on: ubuntu-latest
 
     steps:
       - name: Set environment variables
         id: vars
         run: |
-          BRANCH="${{ github.event.pull_request.base.ref }}"
+          BRANCH="${{ github.event.client_payload.branch }}"
           if [ "$BRANCH" = "prd" ]; then
             echo "tag=latest" >> $GITHUB_OUTPUT
           else
