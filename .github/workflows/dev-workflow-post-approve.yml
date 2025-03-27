@@ -71,3 +71,13 @@ jobs:
                     GH_TOKEN: ${{ secrets.PAT_TOKEN }}
                 run: gh pr create -r ${{ vars.FEATURE_PR_APPROVER }} -B prd -H dev --title 'Merge DEV branch into PRD branch' --body 'Auto-created by workflow'
                 
+            -   name: Trigger Backend Deploy Workflow
+                if: success()
+                env:
+                    GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+                run: |
+                    curl -X POST https://api.github.com/repos/${{ github.repository }}/dispatches \
+                    -H "Accept: application/vnd.github+json" \
+                    -H "Authorization: token $GH_TOKEN" \
+                    -d '{"event_type": "trigger-backend-deploy", "client_payload": { "branch": "prd" }}'
+

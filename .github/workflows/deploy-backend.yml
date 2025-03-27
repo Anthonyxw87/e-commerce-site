@@ -1,30 +1,47 @@
-name: Build & Push Backend to Docker Hub Dev
+name: Build & Push Backend to Docker Hub
 
 on:
-    [workflow_dispatch]
+  repository_dispatch:
+    types: [trigger-backend-deploy]
 
 env:
-    REPO_NAME: "${{ github.repository }}"
-    BRANCH_BASE: dev
-    BRANCH_HEAD: ${{ github.ref_name }}
+  REPO_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push:
+    if: github.event.client_payload.branch == 'dev' || github.event.client_payload.branch == 'prd'
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Set environment variables
+        id: vars
+        run: |
+          BRANCH="${{ github.event.client_payload.branch }}"
+          if [ "$BRANCH" = "prd" ]; then
+            echo "tag=latest" >> $GITHUB_OUTPUT
+          else
+            echo "tag=dev" >> $GITHUB_OUTPUT
+          fi
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.vars.outputs.branch }}
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-    - name: Build and push backend Docker image
-      run: |
-        docker buildx build --platform linux/arm64 -t anthonyxw87/e-commerce-backend:latest ./backend --push
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push backend Docker image
+        run: |
+          docker buildx build \
+            --platform linux/arm64 \
+            -t anthonyxw87/e-commerce-backend:${{ steps.vars.outputs.tag }} \
+            ./backend \
+            --push
