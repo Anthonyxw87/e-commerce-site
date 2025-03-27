@@ -1,4 +1,4 @@
-name: Build & Push Backend to Docker Hub
+name: Build & Push Backend
 
 on:
   repository_dispatch:
