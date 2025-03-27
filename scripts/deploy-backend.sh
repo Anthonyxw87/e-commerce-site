@@ -7,10 +7,12 @@ if [ "$ENV" == "dev" ]; then
   IMAGE_TAG="dev"
   LOG_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/logs/deploy-backend-dev.log"
   CONTAINER_NAME="e-commerce-backend-dev"
+  PORT="5002"
 else
   IMAGE_TAG="prd"
   LOG_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/logs/deploy-backend-prd.log"
   CONTAINER_NAME="e-commerce-backend-prd"
+  PORT="5001"
 fi
 
 IMAGE_NAME="anthonyxw87/e-commerce-backend:$IMAGE_TAG"
@@ -46,7 +48,7 @@ if [ "$CONTAINER_EXISTS" = false ] || [ "$CURRENT_IMAGE_ID" != "$RUNNING_IMAGE_I
     fi
   fi
 
-  docker run -d --name "$CONTAINER_NAME" -p 5001:5001 "$IMAGE_NAME" >> "$LOG_FILE" 2>&1
+  docker run -d --name "$CONTAINER_NAME" -p "$PORT:$PORT" "$IMAGE_NAME" >> "$LOG_FILE" 2>&1
 else
   echo "[$(date)] Image is up to date. No changes." >> "$LOG_FILE"
 fi
