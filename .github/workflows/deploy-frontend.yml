@@ -11,6 +11,7 @@ env:
 jobs:
   build-and-push-to-docker:
     runs-on: ubuntu-latest
+    name: Build & Push Docker (dev)
     if: github.event.client_payload.branch == 'dev'
 
     steps:
@@ -49,6 +50,7 @@ jobs:
 
   deploy-to-netlify:
     runs-on: ubuntu-latest
+    name: Deploy to Netlify (${{ github.event.client_payload.branch }})
     if: github.event.client_payload.branch == 'dev' || github.event.client_payload.branch == 'prd'
 
     steps:
