@@ -1,4 +1,4 @@
-name: Build & Push Frontend to Docker Hub
+name: Build & Deploy Frontend
 
 on:
   repository_dispatch:
@@ -6,11 +6,12 @@ on:
 
 env:
   REPO_NAME: ${{ github.repository }}
+  BUILD_DIR: ./frontend/build
 
 jobs:
-  build-and-push:
-    if: github.event.client_payload.branch == 'dev' || github.event.client_payload.branch == 'prd'
+  build-and-push-to-docker:
     runs-on: ubuntu-latest
+    if: github.event.client_payload.branch == 'dev'
 
     steps:
       - name: Set environment variables
@@ -45,3 +46,53 @@ jobs:
             -t anthonyxw87/e-commerce-frontend:${{ steps.vars.outputs.tag }} \
             ./frontend \
             --push
+
+  deploy-to-netlify:
+    runs-on: ubuntu-latest
+    if: github.event.client_payload.branch == 'dev' || github.event.client_payload.branch == 'prd'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.client_payload.branch }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          cache-dependency-path: frontend/package-lock.json
+          node-version: 23.10.0
+          cache: 'npm'
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli@19.0.3
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: |
+          npm install --package-lock-only
+          npm ci
+
+      - name: Build Project
+        working-directory: ./frontend
+        run: npm run build
+
+      - name: Deploy to Netlify
+        id: netlify_deploy
+        run: |
+          DEPLOY_CMD="netlify deploy --dir $BUILD_DIR --site ${{ secrets.NETLIFY_SITE_ID }} --auth ${{ secrets.NETLIFY_API_TOKEN }}"
+
+          if [[ "${{ github.event.client_payload.branch }}" == "prd" ]]; then
+            DEPLOY_CMD="$DEPLOY_CMD --prod"
+          else
+            DEPLOY_CMD="$DEPLOY_CMD --json > deploy_output.json"
+          fi
+
+          echo "Running: $DEPLOY_CMD"
+          eval $DEPLOY_CMD
+
+      - name: Show Preview URL (if preview)
+        if: github.event.client_payload.branch == 'dev'
+        run: |
+          echo "Preview URL:"
+          cat deploy_output.json | jq -r '.deploy_url'
