@@ -3,7 +3,7 @@
 ENV="${ENV:-dev}"  # default to dev if ENV is not set
 
 # === LOAD SECRETS ===
-ENV_FILE=".env"
+ENV_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/scripts/.env"
 if [ -f "$ENV_FILE" ]; then
   source "$ENV_FILE"
 else
