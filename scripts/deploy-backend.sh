@@ -3,7 +3,7 @@
 ENV="${ENV:-dev}"  # default to dev if ENV is not set
 
 # === LOAD SECRETS ===
-ENV_FILE=".env"
+ENV_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/scripts/.env"
 if [ -f "$ENV_FILE" ]; then
   source "$ENV_FILE"
 else
@@ -63,12 +63,27 @@ if [ "$CONTAINER_EXISTS" = false ] || [ "$CURRENT_IMAGE_ID" != "$RUNNING_IMAGE_I
 
   docker run -d --name "$CONTAINER_NAME" -p "$PORT:$PORT" -e ENV="$ENV" "$IMAGE_NAME" >> "$LOG_FILE" 2>&1
   
-  # === START NGROK ONLY IN PRD ===
+  # === START/RESTART NGROK ONLY IN PRD ===
   if [ "$ENV" == "prd" ]; then
-    echo "[$(date)] Starting Ngrok tunnel for $ENV on port $PORT..." >> "$LOG_FILE"
+    NGROK_CONTAINER_NAME="ngrok-$ENV"
+    echo "[$(date)] Preparing Ngrok tunnel for $ENV on port $PORT..." >> "$LOG_FILE"
+
+    # Check if Ngrok container exists
+    if docker ps -a --format '{{.Names}}' | grep -q "^$NGROK_CONTAINER_NAME$"; then
+      echo "[$(date)] Ngrok container exists. Restarting..." >> "$LOG_FILE"
+      docker stop "$NGROK_CONTAINER_NAME" >> "$LOG_FILE" 2>&1
+      docker rm "$NGROK_CONTAINER_NAME" >> "$LOG_FILE" 2>&1
+
+      # Remove old Ngrok image (optional cleanup, like backend)
+      NGROK_IMAGE_ID=$(docker inspect --format='{{.Image}}' "$NGROK_CONTAINER_NAME" 2>/dev/null)
+      if [ -n "$NGROK_IMAGE_ID" ]; then
+        docker rmi "$NGROK_IMAGE_ID" >> "$LOG_FILE" 2>&1
+        echo "[$(date)] Old Ngrok image removed: $NGROK_IMAGE_ID" >> "$LOG_FILE"
+      fi
+    fi
 
     docker run -d --rm \
-      --name "ngrok-$ENV" \
+      --name "$NGROK_CONTAINER_NAME" \
       -e NGROK_AUTHTOKEN="$NGROK_AUTHTOKEN" \
       ngrok/ngrok http host.docker.internal:$PORT \
       --url="$NGROK_DOMAIN" >> "$LOG_FILE" 2>&1
