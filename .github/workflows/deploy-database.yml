@@ -46,3 +46,19 @@ jobs:
             -t anthonyxw87/e-commerce-database:${{ steps.vars.outputs.tag }} \
             ./db \
             --push
+
+  mark-database-deployment-complete:
+    name: Mark Database Deployment Complete
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: needs.build-and-push.result == 'success' && github.event.client_payload.branch == 'dev'
+    steps:
+      - name: Send Database Deployment Completion Signal
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          echo "Database deploy complete for branch: ${{ github.event.client_payload.branch }}"
+          curl -X POST https://api.github.com/repos/${{ github.repository }}/dispatches \
+          -H "Accept: application/vnd.github+json" \
+          -H "Authorization: token $GH_TOKEN" \
+          -d '{"event_type": "deployment-complete", "client_payload": { "component": "database", "status": "success", "branch": "dev" }}'

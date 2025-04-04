@@ -3,6 +3,7 @@ frontend/.env.development
  backend/.env
 frontend/node_modules
 backend/venv
+backend/src/.python-version
 .netlify
 logs/
 scripts/.env
