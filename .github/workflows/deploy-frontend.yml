@@ -44,8 +44,9 @@ jobs:
         run: |
           docker buildx build \
             --platform linux/arm64 \
+            --file ./frontend/Dockerfile \
             -t anthonyxw87/e-commerce-frontend:${{ steps.vars.outputs.tag }} \
-            ./frontend \
+            . \
             --push
 
   deploy-to-netlify:
