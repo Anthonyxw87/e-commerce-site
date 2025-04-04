@@ -14,10 +14,14 @@ jobs:
         with:
           ref: dev
 
-      - name: Set up Git
+      - name: Set up Git with PAT auth
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          git config user.name "anthonyxw87"
-          git config user.email "anthonywang64@gmail.com"
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
+
 
       - name: Load or create deploy-status.json
         id: status_file
