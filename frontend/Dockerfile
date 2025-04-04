@@ -11,8 +11,8 @@ RUN npm install
 # Copy all files
 COPY . .
 
-# Move .env.development to .env
-RUN cp .env.development .env
+ENV REACT_APP_API_URL=http://localhost:5002
+ENV REACT_APP_ENV=dev
 
 # Build the app
 CMD ["npm", "start"]
