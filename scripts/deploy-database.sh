@@ -68,3 +68,4 @@ if [ "$CONTAINER_EXISTS" = false ] || [ "$CURRENT_IMAGE_ID" != "$RUNNING_IMAGE_I
 else
   echo "[$(date)] Image is up to date. No changes." >> "$LOG_FILE"
 fi
+
