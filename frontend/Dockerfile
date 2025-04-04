@@ -11,8 +11,8 @@ RUN npm install
 # Copy all files
 COPY . .
 
-# Copy env file for local dev
-COPY .env.development .env
+# Move .env.development to .env
+RUN cp .env.development .env
 
 # Build the app
 CMD ["npm", "start"]
