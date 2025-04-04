@@ -11,8 +11,9 @@ RUN npm install
 # Copy all files
 COPY . .
 
-# Expose the port the app will run on 
-EXPOSE 3000
+# Copy env file (for local dev)
+ARG ENV_FILE=.env.development
+COPY ${ENV_FILE} .env
 
 # Build the app
 CMD ["npm", "start"]
