@@ -12,7 +12,7 @@ RUN npm install
 COPY . .
 
 # Copy env file for local dev
-COPY frontend/.env.development .env
+COPY .env.development .env
 
 # Build the app
 CMD ["npm", "start"]
