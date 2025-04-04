@@ -1,0 +1,37 @@
+name: Monitor Deployments & Create PRD PR
+
+on:
+  repository_dispatch:
+    types: [deployment-complete]
+
+jobs:
+  check-deployments:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Update deployment state
+        run: |
+          mkdir -p .github/deploy-status/
+          echo "${{ github.event.client_payload.status }}" > .github/deploy-status/${{ github.event.client_payload.component }}
+          
+      - name: Check all components
+        id: check
+        run: |
+          components=("frontend" "backend" "database")
+          all_success=true
+          for comp in "${components[@]}"; do
+            if [ ! -f ".github/deploy-status/$comp" ] || [ "$(cat .github/deploy-status/$comp)" != "success" ]; then
+              all_success=false
+              break
+            fi
+          done
+          echo "all_success=$all_success" >> $GITHUB_OUTPUT
+
+      - name: Create PR to PRD
+        if: steps.check.outputs.all_success == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          gh pr create -r ${{ vars.FEATURE_PR_APPROVER }} -B prd -H dev --title 'Merge DEV branch into PRD branch' --body 'Auto-created by workflow'

@@ -65,11 +65,6 @@ jobs:
                     echo "PR closed due to error. See action logs for details."
                     gh pr close $PR_NUMBER --comment "Auto-closing pull request"
 
-            -   name: Create pull request to PRD
-                if: success()
-                env:
-                    GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-                run: gh pr create -r ${{ vars.FEATURE_PR_APPROVER }} -B prd -H dev --title 'Merge DEV branch into PRD branch' --body 'Auto-created by workflow'
                 
             -   name: Trigger Backend Deploy Workflow
                 if: success()
