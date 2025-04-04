@@ -5,33 +5,67 @@ on:
     types: [deployment-complete]
 
 jobs:
-  check-deployments:
+  track-deployment-status:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
 
-      - name: Update deployment state
+    steps:
+      - name: Checkout dev branch
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+
+      - name: Set up Git
         run: |
-          mkdir -p .github/deploy-status/
-          echo "${{ github.event.client_payload.status }}" > .github/deploy-status/${{ github.event.client_payload.component }}
+          git config user.name "anthonyxw87"
+          git config user.email "anthonywang64@gmail.com"
+
+      - name: Load or create deploy-status.json
+        id: status_file
+        run: |
+          mkdir -p .github/deploy-state
+          STATUS_FILE=".github/deploy-state/deploy-status.json"
           
-      - name: Check all components
-        id: check
+          if [ ! -f "$STATUS_FILE" ]; then
+            echo '{"frontend": "", "backend": "", "database": ""}' > $STATUS_FILE
+          fi
+
+          cat $STATUS_FILE
+
+      - name: Update component status
         run: |
-          components=("frontend" "backend" "database")
-          all_success=true
-          for comp in "${components[@]}"; do
-            if [ ! -f ".github/deploy-status/$comp" ] || [ "$(cat .github/deploy-status/$comp)" != "success" ]; then
-              all_success=false
-              break
-            fi
-          done
-          echo "all_success=$all_success" >> $GITHUB_OUTPUT
+          COMPONENT="${{ github.event.client_payload.component }}"
+          STATUS="${{ github.event.client_payload.status }}"
+          FILE=".github/deploy-state/deploy-status.json"
+
+          jq --arg comp "$COMPONENT" --arg status "$STATUS" '.[$comp] = $status' "$FILE" > tmp.json && mv tmp.json "$FILE"
+
+      - name: Commit and push updated status
+        run: |
+          git add .github/deploy-state/deploy-status.json
+          git commit -m "Update ${{ github.event.client_payload.component }} deploy status to ${{ github.event.client_payload.status }}" || echo "No changes to commit"
+          git push origin dev
+
+      - name: Check if all components are successful
+        id: check_all
+        run: |
+          FILE=".github/deploy-state/deploy-status.json"
+          STATUS=$(jq -r '[.frontend, .backend, .database] | all(. == "success")' "$FILE")
+          echo "all_success=$STATUS" >> $GITHUB_OUTPUT
 
       - name: Create PR to PRD
-        if: steps.check.outputs.all_success == 'true'
+        if: steps.check_all.outputs.all_success == 'true'
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          gh pr create -r ${{ vars.FEATURE_PR_APPROVER }} -B prd -H dev --title 'Merge DEV branch into PRD branch' --body 'Auto-created by workflow'
+          gh pr create \
+            -B prd -H dev \
+            --title "Merge DEV → PRD (auto)" \
+            --body "All components deployed successfully. This PR was auto-created by GitHub Actions."
+
+      - name: Reset status after PR
+        if: steps.check_all.outputs.all_success == 'true'
+        run: |
+          echo '{"frontend": "", "backend": "", "database": ""}' > .github/deploy-state/deploy-status.json
+          git add .github/deploy-state/deploy-status.json
+          git commit -m "Reset deployment status after PR to PRD"
+          git push origin dev
