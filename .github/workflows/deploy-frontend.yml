@@ -45,6 +45,8 @@ jobs:
           docker buildx build \
             --platform linux/arm64 \
             -t anthonyxw87/e-commerce-frontend:${{ steps.vars.outputs.tag }} \
+            --build-arg REACT_APP_AUTH0_DOMAIN=${{ secrets.REACT_APP_AUTH0_DOMAIN }} \
+            --build-arg REACT_APP_AUTH0_CLIENT_ID=${{ secrets.REACT_APP_AUTH0_CLIENT_ID }} \
             ./frontend \
             --push
 
