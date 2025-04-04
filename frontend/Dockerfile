@@ -11,8 +11,8 @@ RUN npm install
 # Copy all files
 COPY . .
 
-# Expose the port the app will run on 
-EXPOSE 3000
+ENV REACT_APP_API_URL=http://localhost:5002
+ENV REACT_APP_ENV=dev
 
 # Build the app
 CMD ["npm", "start"]
