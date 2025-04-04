@@ -18,3 +18,12 @@ ENV REACT_APP_AUTH0_DOMAIN=$REACT_APP_AUTH0_DOMAIN
 ENV REACT_APP_AUTH0_CLIENT_ID=$REACT_APP_AUTH0_CLIENT_ID
 
 RUN npm run build
+
+# Install lightweight static server
+RUN npm install -g serve
+
+# Expose default port for serve
+EXPOSE 3000
+
+# Serve the built app
+CMD ["serve", "-s", "build", "-l", "3000"]
