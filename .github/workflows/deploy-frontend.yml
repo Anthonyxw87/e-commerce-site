@@ -46,7 +46,7 @@ jobs:
             --platform linux/arm64 \
             -t anthonyxw87/e-commerce-frontend:${{ steps.vars.outputs.tag }} \
             --build-arg REACT_APP_AUTH0_DOMAIN=${{ secrets.REACT_APP_AUTH0_DOMAIN }} \
-            --build-arg REACT_APP_AUTH0_CLIENT_ID=${{ secrets.REACT_APP_AUTH0_CLIENT_ID }} \
+            --build-arg REACT_APP_AUTH0_CLIENT_ID=${{ secrets.REACT_APP_AUTH0_CLIENT_ID_DEV }} \
             --build-arg REACT_APP_API_AUDIENCE=${{ secrets.REACT_APP_API_AUDIENCE }} \
             ./frontend \
             --push
@@ -80,6 +80,10 @@ jobs:
 
       - name: Build Project
         working-directory: ./frontend
+        env:
+          REACT_APP_AUTH0_DOMAIN: ${{ secrets.REACT_APP_AUTH0_DOMAIN }}
+          REACT_APP_AUTH0_CLIENT_ID: ${{ secrets.REACT_APP_AUTH0_CLIENT_ID_PRD }}
+          REACT_APP_API_URL: ${{ secrets.REACT_APP_API_AUDIENCE }}
         run: npm run build
 
       - name: Deploy to Netlify
