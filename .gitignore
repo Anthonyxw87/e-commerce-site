@@ -1,8 +1,6 @@
-frontend/.env
-frontend/.env.development
- backend/.env
+frontend/.env*
+backend/.env*
 frontend/node_modules
-backend/venv
 backend/src/.python-version
 .netlify
 logs/
