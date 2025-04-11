@@ -2,7 +2,7 @@ import os
 import logging
 from flask import Flask
 from flask_cors import CORS
-from routes.user_routes import user_bp
+from src.routes.user_routes import user_bp
 
 ENV = os.getenv("ENV", "dev")
 
