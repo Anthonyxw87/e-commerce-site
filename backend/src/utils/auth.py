@@ -1,11 +1,10 @@
 import json
 from functools import wraps
-from flask import request, _request_ctx_stack, abort
+from flask import request, abort, g
 from jose import jwt
 import requests
 import os
 
-ENV = os.getenv("ENV", "dev")
 AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
 API_AUDIENCE = os.getenv("API_AUDIENCE")
 
@@ -59,9 +58,15 @@ def requires_auth(f):
                 audience=API_AUDIENCE,
                 issuer=f"https://{AUTH0_DOMAIN}/"
             )
+            
+            # Store user info in Flask's g object
+            g.current_user = payload
+            return f(*args, **kwargs)
+        except jwt.ExpiredSignatureError:
+            raise AuthError({"code": "token_expired"}, 401)
+        except jwt.JWTClaimsError:
+            raise AuthError({"code": "invalid_claims"}, 401)
         except Exception:
             raise AuthError({"code": "invalid_token"}, 401)
         
-        _request_ctx_stack.top.current_user = payload
-        return f(*args, **kwargs)
     return decorated
