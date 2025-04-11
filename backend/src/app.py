@@ -1,20 +1,17 @@
 import os
-import json
 import logging
-from flask import Flask, request, jsonify
+from flask import Flask
 from flask_cors import CORS
-from jose import jwt
-from urllib.request import urlopen
+from routes.user_routes import user_bp
 
 ENV = os.getenv("ENV", "dev")
-AUTH0_DOMAIN = os.getenv("AUTH0_DOMAIN")
-API_AUDIENCE = os.getenv("API_AUDIENCE")
 
 app = Flask(__name__)
 CORS(app)
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+app.register_blueprint(user_bp, url_prefix="/api")
 
 @app.route("/")
 def home():
