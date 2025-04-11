@@ -1,11 +1,17 @@
 import os
 import logging
 from flask import Flask
+from flask_cors import CORS
+from src.routes.user_routes import user_bp
+
+ENV = os.getenv("ENV", "dev")
 
 app = Flask(__name__)
+CORS(app)
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+app.register_blueprint(user_bp, url_prefix="/api")
 
 @app.route("/")
 def home():
@@ -15,10 +21,9 @@ def home():
 
 if __name__ == "__main__":
     # ENV=dev -> port 5002, ENV=prd -> port 5001
-    env = os.getenv("ENV", "dev")
-    port = 5002 if env == "dev" else 5001
+    port = 5002 if ENV == "dev" else 5001
 
-    logger.info(f"Starting backend service in '{env}' mode on port {port}...")
+    logger.info(f"Starting backend service in '{ENV}' mode on port {port}...")
     try:
         app.run(host="0.0.0.0", port=port)
         logger.info("Backend service started successfully")
