@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 
 # Define the command to run your application
-CMD ["python", "src/app.py"]
+CMD ["python", "-m", "src.app"]
