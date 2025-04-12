@@ -37,7 +37,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-backend-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-backend-buildx-${{ github.event.client_payload.branch }}
           restore-keys: |
             ${{ runner.os }}-backend-buildx-
 
