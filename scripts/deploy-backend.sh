@@ -17,13 +17,11 @@ if [ "$ENV" == "dev" ]; then
   LOG_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/logs/deploy-backend-dev.log"
   CONTAINER_NAME="e-commerce-backend-dev"
   PORT="5002"
-  BACKEND_ENV_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/backend/.env.development"
 else
   IMAGE_TAG="prd"
   LOG_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/logs/deploy-backend-prd.log"
   CONTAINER_NAME="e-commerce-backend-prd"
   PORT="5001"
-  BACKEND_ENV_FILE="/Users/anthonywang64/Documents/Coding_projects/e-commerce-site/backend/.env.production"
 
   # Validate Ngrok vars only in prd
   if [[ -z "$NGROK_AUTHTOKEN" || -z "$NGROK_DOMAIN" ]]; then
@@ -63,7 +61,7 @@ if [ "$CONTAINER_EXISTS" = false ] || [ "$CURRENT_IMAGE_ID" != "$RUNNING_IMAGE_I
     fi
   fi
 
-  docker run -d --name "$CONTAINER_NAME" --env-file "$BACKEND_ENV_FILE" -p "$PORT:$PORT" -e ENV="$ENV" "$IMAGE_NAME" >> "$LOG_FILE" 2>&1
+  docker run -d --name "$CONTAINER_NAME" -p "$PORT:$PORT" -e ENV="$ENV" "$IMAGE_NAME" >> "$LOG_FILE" 2>&1
   
   # === START/RESTART NGROK ONLY IN PRD ===
   if [ "$ENV" == "prd" ]; then

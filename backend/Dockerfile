@@ -10,6 +10,11 @@ COPY . /app
 # Install any dependencies specified in requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt
 
+ARG REACT_APP_AUTH0_DOMAIN
+ARG REACT_APP_API_AUDIENCE
+
+ENV AUTH0_DOMAIN=$REACT_APP_AUTH0_DOMAIN
+ENV API_AUDIENCE=$REACT_APP_API_AUDIENCE
 ENV PYTHONPATH=/app
 
 # Define the command to run your application
