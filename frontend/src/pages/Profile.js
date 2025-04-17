@@ -11,7 +11,7 @@ const Profile = () => {
 
     const loadProfile = async () => {
         try {
-            const accessToken = await getAccessTokenSilently();
+            // const accessToken = await getAccessTokenSilently();
             const idToken = await getIdTokenClaims().__raw;
 
             const response = await fetch(`${BACKEND_URL}/api/profile`, {
