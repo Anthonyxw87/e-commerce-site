@@ -4,6 +4,10 @@ on:
   repository_dispatch:
     types: [deployment-complete]
 
+env:
+  ENVIRONMENT_NAME: deployment-state
+  SECRET_NAME: DEPLOY_STATE
+
 jobs:
   track-deployment-status:
     runs-on: ubuntu-latest
@@ -15,26 +19,10 @@ jobs:
           ref: dev
           token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Set up Git with PAT auth
-        env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+      - name: Load deploy status from environment secret
+        id: load_status
         run: |
-          git config user.name "anthonyxw87"
-          git config user.email "anthonywang64@gmail.com"
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
-
-
-      - name: Load or create deploy-status.json
-        id: status_file
-        run: |
-          mkdir -p .github/deploy-state
-          STATUS_FILE=".github/deploy-state/deploy-status.json"
-          
-          if [ ! -f "$STATUS_FILE" ]; then
-            echo '{"frontend": "", "backend": "", "database": ""}' > $STATUS_FILE
-          fi
-
-          cat $STATUS_FILE
+          echo '${{ secrets.DEPLOY_STATE }}' > .github/deploy-state/deploy-status.json
 
       - name: Update component status
         run: |
@@ -43,12 +31,6 @@ jobs:
           FILE=".github/deploy-state/deploy-status.json"
 
           jq --arg comp "$COMPONENT" --arg status "$STATUS" '.[$comp] = $status' "$FILE" > tmp.json && mv tmp.json "$FILE"
-
-      - name: Commit and push updated status
-        run: |
-          git add .github/deploy-state/deploy-status.json
-          git commit -m "Update ${{ github.event.client_payload.component }} deploy status to ${{ github.event.client_payload.status }}" || echo "No changes to commit"
-          git push origin dev
 
       - name: Check if all components are successful
         id: check_all
@@ -71,6 +53,24 @@ jobs:
         if: steps.check_all.outputs.all_success == 'true'
         run: |
           echo '{"frontend": "", "backend": "", "database": ""}' > .github/deploy-state/deploy-status.json
-          git add .github/deploy-state/deploy-status.json
-          git commit -m "Reset deployment status after PR to PRD"
-          git push origin dev
+
+      - name: Update GitHub Environment Secret
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          VALUE=$(cat .github/deploy-state/deploy-status.json | base64 | tr -d '\n')
+          PUBLIC_KEY_RESPONSE=$(curl -s -H "Authorization: token $GH_TOKEN" \
+            https://api.github.com/repos/${{ github.repository }}/environments/${{ env.ENVIRONMENT_NAME }}/secrets/public-key)
+
+          KEY_ID=$(echo "$PUBLIC_KEY_RESPONSE" | jq -r '.key_id')
+          KEY=$(echo "$PUBLIC_KEY_RESPONSE" | jq -r '.key')
+
+          echo "$VALUE" | \
+            openssl pkeyutl -encrypt -pubin -inkey <(echo "$KEY" | base64 -d) -out encrypted.bin
+
+          ENCRYPTED_VALUE=$(base64 -w 0 encrypted.bin)
+
+          curl -X PUT -H "Authorization: token $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{\"encrypted_value\":\"$ENCRYPTED_VALUE\",\"key_id\":\"$KEY_ID\"}" \
+            https://api.github.com/repos/${{ github.repository }}/environments/${{ env.ENVIRONMENT_NAME }}/secrets/${{ env.SECRET_NAME }}
