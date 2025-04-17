@@ -54,21 +54,44 @@ jobs:
         run: |
           echo '{"frontend": "", "backend": "", "database": ""}' > .github/deploy-state/deploy-status.json
 
+      - name: Get GitHub Environment Public Key
+        id: get_key
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
+        run: |
+          curl -s -H "Authorization: token $GH_TOKEN" \
+            https://api.github.com/repos/${{ github.repository }}/environments/${{ env.ENVIRONMENT_NAME }}/secrets/public-key > public_key.json
+
+      - name: Encrypt new deploy status with libsodium
+        run: |
+          echo '${{ secrets.DEPLOY_STATE }}' > old.json
+          cat .github/deploy-state/deploy-status.json > new.json
+
+          cat > encrypt.js <<'EOF'
+          const sodium = require('tweetsodium');
+          const fs = require('fs');
+
+          const key = process.env.PUBLIC_KEY;
+          const value = fs.readFileSync('new.json', 'utf8');
+
+          const messageBytes = Buffer.from(value);
+          const keyBytes = Buffer.from(key, 'base64');
+          const encryptedBytes = sodium.seal(messageBytes, keyBytes);
+
+          const encrypted = Buffer.from(encryptedBytes).toString('base64');
+          fs.writeFileSync('encrypted.txt', encrypted);
+          EOF
+
+          npm install tweetsodium
+          export PUBLIC_KEY=$(cat public_key.json | jq -r '.key')
+          node encrypt.js
+
       - name: Update GitHub Environment Secret
         env:
           GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          VALUE=$(cat .github/deploy-state/deploy-status.json | base64 | tr -d '\n')
-          PUBLIC_KEY_RESPONSE=$(curl -s -H "Authorization: token $GH_TOKEN" \
-            https://api.github.com/repos/${{ github.repository }}/environments/${{ env.ENVIRONMENT_NAME }}/secrets/public-key)
-
-          KEY_ID=$(echo "$PUBLIC_KEY_RESPONSE" | jq -r '.key_id')
-          KEY=$(echo "$PUBLIC_KEY_RESPONSE" | jq -r '.key')
-
-          echo "$VALUE" | \
-            openssl pkeyutl -encrypt -pubin -inkey <(echo "$KEY" | base64 -d) -out encrypted.bin
-
-          ENCRYPTED_VALUE=$(base64 -w 0 encrypted.bin)
+          KEY_ID=$(cat public_key.json | jq -r '.key_id')
+          ENCRYPTED_VALUE=$(cat encrypted.txt)
 
           curl -X PUT -H "Authorization: token $GH_TOKEN" \
             -H "Content-Type: application/json" \
