@@ -12,10 +12,11 @@ const Profile = () => {
     const loadProfile = async () => {
         try {
             const accessToken = await getAccessTokenSilently();
+            const idToken = await auth0.getIdTokenClaims().__raw;
 
             const response = await fetch(`${BACKEND_URL}/api/profile`, {
                 headers: {
-                    Authorization: `Bearer ${accessToken}`,
+                    Authorization: `Bearer ${idToken}`,
                 },
             });
 
