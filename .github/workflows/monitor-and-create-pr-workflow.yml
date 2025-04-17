@@ -4,10 +4,6 @@ on:
   repository_dispatch:
     types: [deployment-complete]
 
-env:
-  ENVIRONMENT_NAME: deployment-state
-  SECRET_NAME: DEPLOY_STATE
-
 jobs:
   track-deployment-status:
     runs-on: ubuntu-latest
@@ -19,10 +15,26 @@ jobs:
           ref: dev
           token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Load deploy status from environment secret
-        id: load_status
+      - name: Set up Git with PAT auth
+        env:
+          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
         run: |
-          echo '${{ secrets.DEPLOY_STATE }}' > .github/deploy-state/deploy-status.json
+          git config user.name "anthonyxw87"
+          git config user.email "anthonywang64@gmail.com"
+          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
+
+
+      - name: Load or create deploy-status.json
+        id: status_file
+        run: |
+          mkdir -p .github/deploy-state
+          STATUS_FILE=".github/deploy-state/deploy-status.json"
+          
+          if [ ! -f "$STATUS_FILE" ]; then
+            echo '{"frontend": "", "backend": "", "database": ""}' > $STATUS_FILE
+          fi
+
+          cat $STATUS_FILE
 
       - name: Update component status
         run: |
@@ -31,6 +43,12 @@ jobs:
           FILE=".github/deploy-state/deploy-status.json"
 
           jq --arg comp "$COMPONENT" --arg status "$STATUS" '.[$comp] = $status' "$FILE" > tmp.json && mv tmp.json "$FILE"
+
+      - name: Commit and push updated status
+        run: |
+          git add .github/deploy-state/deploy-status.json
+          git commit -m "Update ${{ github.event.client_payload.component }} deploy status to ${{ github.event.client_payload.status }}" || echo "No changes to commit"
+          git push origin dev
 
       - name: Check if all components are successful
         id: check_all
@@ -53,47 +71,6 @@ jobs:
         if: steps.check_all.outputs.all_success == 'true'
         run: |
           echo '{"frontend": "", "backend": "", "database": ""}' > .github/deploy-state/deploy-status.json
-
-      - name: Get GitHub Environment Public Key
-        id: get_key
-        env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-        run: |
-          curl -s -H "Authorization: token $GH_TOKEN" \
-            https://api.github.com/repos/${{ github.repository }}/environments/${{ env.ENVIRONMENT_NAME }}/secrets/public-key > public_key.json
-
-      - name: Encrypt new deploy status with libsodium
-        run: |
-          echo '${{ secrets.DEPLOY_STATE }}' > old.json
-          cat .github/deploy-state/deploy-status.json > new.json
-
-          cat > encrypt.js <<'EOF'
-          const sodium = require('tweetsodium');
-          const fs = require('fs');
-
-          const key = process.env.PUBLIC_KEY;
-          const value = fs.readFileSync('new.json', 'utf8');
-
-          const messageBytes = Buffer.from(value);
-          const keyBytes = Buffer.from(key, 'base64');
-          const encryptedBytes = sodium.seal(messageBytes, keyBytes);
-
-          const encrypted = Buffer.from(encryptedBytes).toString('base64');
-          fs.writeFileSync('encrypted.txt', encrypted);
-          EOF
-
-          npm install tweetsodium
-          export PUBLIC_KEY=$(cat public_key.json | jq -r '.key')
-          node encrypt.js
-
-      - name: Update GitHub Environment Secret
-        env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-        run: |
-          KEY_ID=$(cat public_key.json | jq -r '.key_id')
-          ENCRYPTED_VALUE=$(cat encrypted.txt)
-
-          curl -X PUT -H "Authorization: token $GH_TOKEN" \
-            -H "Content-Type: application/json" \
-            -d "{\"encrypted_value\":\"$ENCRYPTED_VALUE\",\"key_id\":\"$KEY_ID\"}" \
-            https://api.github.com/repos/${{ github.repository }}/environments/${{ env.ENVIRONMENT_NAME }}/secrets/${{ env.SECRET_NAME }}
+          git add .github/deploy-state/deploy-status.json
+          git commit -m "Reset deployment status after PR to PRD"
+          git push origin dev
