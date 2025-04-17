@@ -24,7 +24,7 @@ const Profile = () => {
             }
 
             const data = await response.json();
-            setPayload(data.payload); // since Flask returns { payload: ... }
+            setPayload(data.payload);
         } catch (err) {
             setError(err.message);
         }
