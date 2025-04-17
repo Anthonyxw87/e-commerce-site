@@ -33,10 +33,6 @@ def requires_auth(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = get_token_auth_header()
-
-        unverified_claims = jwt.get_unverified_claims(token)
-        print("aud in token:", unverified_claims.get("aud"))
-
         jsonurl = requests.get(f"https://{AUTH0_DOMAIN}/.well-known/jwks.json")
         jwks = jsonurl.json()
         unverified_header = jwt.get_unverified_header(token)
