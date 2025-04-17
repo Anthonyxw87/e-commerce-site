@@ -16,7 +16,7 @@ const Profile = () => {
 
             const response = await fetch(`${BACKEND_URL}/api/profile`, {
                 headers: {
-                    Authorization: `Bearer ${idToken}`,
+                    Authorization: `bearer ${idToken}`,
                 },
             });
 
