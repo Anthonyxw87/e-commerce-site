@@ -75,7 +75,7 @@ jobs:
           const value = fs.readFileSync('new.json', 'utf8');
 
           const messageBytes = Buffer.from(value);
-          const keyBytes = Buffer.from(key, 'base64');
+          const keyBytes = Buffer.from(key); // FIXED: no base64 decode here
           const encryptedBytes = sodium.seal(messageBytes, keyBytes);
 
           const encrypted = Buffer.from(encryptedBytes).toString('base64');
