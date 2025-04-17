@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 
+const ENV = process.env.REACT_APP_ENV;
+const BACKEND_URL = ENV === "dev" ? `http://localhost:5002` : `${process.env.REACT_APP_BACKEND_API}`
+
 const Profile = () => {
     const { user, logout, isAuthenticated, getAccessTokenSilently } = useAuth0();
     const [payload, setPayload] = useState(null);
@@ -10,7 +13,7 @@ const Profile = () => {
         try {
             const accessToken = await getAccessTokenSilently();
 
-            const response = await fetch("http://localhost:5000/api/profile", {
+            const response = await fetch(`${BACKEND_URL}/api/profile`, {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                 },
