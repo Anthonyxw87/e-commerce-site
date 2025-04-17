@@ -54,6 +54,7 @@ jobs:
             -t anthonyxw87/e-commerce-backend:${{ steps.vars.outputs.tag }} \
             --build-arg REACT_APP_AUTH0_DOMAIN=${{ secrets.REACT_APP_AUTH0_DOMAIN }} \
             --build-arg REACT_APP_API_AUDIENCE=${{ secrets.REACT_APP_API_AUDIENCE }} \
+            --build-arg BACKEND_API=${{ secrets.BACKEND_API }} \
             --cache-from=type=local,src=/tmp/.buildx-cache \
             --cache-to=type=local,dest=/tmp/.buildx-cache-new \
             ./backend \
