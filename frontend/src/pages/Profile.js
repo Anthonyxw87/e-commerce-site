@@ -5,13 +5,12 @@ const ENV = process.env.REACT_APP_ENV;
 const BACKEND_URL = ENV === "dev" ? `http://localhost:5002` : `${process.env.REACT_APP_BACKEND_API}`
 
 const Profile = () => {
-    const { user, logout, isAuthenticated, getAccessTokenSilently, getIdTokenClaims } = useAuth0();
+    const { user, logout, isAuthenticated, getIdTokenClaims } = useAuth0();
     const [payload, setPayload] = useState(null);
     const [error, setError] = useState(null);
 
     const loadProfile = async () => {
         try {
-            // const accessToken = await getAccessTokenSilently();
             const idToken = await getIdTokenClaims().__raw;
 
             const response = await fetch(`${BACKEND_URL}/api/profile`, {
