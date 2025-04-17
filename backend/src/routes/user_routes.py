@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, g
 from src.utils.auth import requires_auth
 
 user_bp = Blueprint("user", __name__)
