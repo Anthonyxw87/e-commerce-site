@@ -15,26 +15,19 @@ jobs:
           ref: dev
           token: ${{ secrets.PAT_TOKEN }}
 
-      - name: Set up Git with PAT auth
-        env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-        run: |
-          git config user.name "anthonyxw87"
-          git config user.email "anthonywang64@gmail.com"
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
+      - name: Download previous deployment status
+        uses: actions/download-artifact@v4
+        with:
+          name: deploy-status
+          path: .github/deploy-state
 
-
-      - name: Load or create deploy-status.json
-        id: status_file
+      - name: Ensure deploy-status.json exists
         run: |
+          FILE=".github/deploy-state/deploy-status.json"
           mkdir -p .github/deploy-state
-          STATUS_FILE=".github/deploy-state/deploy-status.json"
-          
-          if [ ! -f "$STATUS_FILE" ]; then
-            echo '{"frontend": "", "backend": "", "database": ""}' > $STATUS_FILE
+          if [ ! -f "$FILE" ]; then
+            echo '{"frontend": "", "backend": "", "database": ""}' > "$FILE"
           fi
-
-          cat $STATUS_FILE
 
       - name: Update component status
         run: |
@@ -44,11 +37,11 @@ jobs:
 
           jq --arg comp "$COMPONENT" --arg status "$STATUS" '.[$comp] = $status' "$FILE" > tmp.json && mv tmp.json "$FILE"
 
-      - name: Commit and push updated status
-        run: |
-          git add .github/deploy-state/deploy-status.json
-          git commit -m "Update ${{ github.event.client_payload.component }} deploy status to ${{ github.event.client_payload.status }}" || echo "No changes to commit"
-          git push origin dev
+      - name: Upload updated deployment status
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-status
+          path: .github/deploy-state/deploy-status.json
 
       - name: Check if all components are successful
         id: check_all
@@ -71,6 +64,10 @@ jobs:
         if: steps.check_all.outputs.all_success == 'true'
         run: |
           echo '{"frontend": "", "backend": "", "database": ""}' > .github/deploy-state/deploy-status.json
-          git add .github/deploy-state/deploy-status.json
-          git commit -m "Reset deployment status after PR to PRD"
-          git push origin dev
+
+      - name: Upload reset deployment status
+        if: steps.check_all.outputs.all_success == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: deploy-status
+          path: .github/deploy-state/deploy-status.json
