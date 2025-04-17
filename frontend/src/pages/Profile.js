@@ -11,7 +11,8 @@ const Profile = () => {
 
     const loadProfile = async () => {
         try {
-            const idToken = await getIdTokenClaims().__raw;
+            const claims = await getIdTokenClaims();
+            const idToken = claims.__raw;   
 
             const response = await fetch(`${BACKEND_URL}/api/profile`, {
                 headers: {
