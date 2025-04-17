@@ -9,53 +9,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout dev branch
-        uses: actions/checkout@v4
-        with:
-          ref: dev
-          token: ${{ secrets.PAT_TOKEN }}
-
-      - name: Set up Git with PAT auth
-        env:
-          GH_TOKEN: ${{ secrets.PAT_TOKEN }}
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}
-
-
-      - name: Load or create deploy-status.json
-        id: status_file
-        run: |
-          mkdir -p .github/deploy-state
-          STATUS_FILE=".github/deploy-state/deploy-status.json"
-          
-          if [ ! -f "$STATUS_FILE" ]; then
-            echo '{"frontend": "", "backend": "", "database": ""}' > $STATUS_FILE
-          fi
-
-          cat $STATUS_FILE
-
-      - name: Update component status
+      - name: Update component status in repo variable
         run: |
           COMPONENT="${{ github.event.client_payload.component }}"
           STATUS="${{ github.event.client_payload.status }}"
-          FILE=".github/deploy-state/deploy-status.json"
+          VAR_NAME="DEPLOY_STATUS_${COMPONENT^^}"  # Uppercase: frontend → DEPLOY_STATUS_FRONTEND
 
-          jq --arg comp "$COMPONENT" --arg status "$STATUS" '.[$comp] = $status' "$FILE" > tmp.json && mv tmp.json "$FILE"
+          curl -s -o /dev/null -w "%{http_code}" -X PATCH \
+            -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/variables/${VAR_NAME} \
+            -d '{"name":"'"${VAR_NAME}"'","value":"'"${STATUS}"'"}' | grep -qE "200|204" || \
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/variables \
+            -d '{"name":"'"${VAR_NAME}"'","value":"'"${STATUS}"'"}'
 
-      - name: Commit and push updated status
-        run: |
-          git add .github/deploy-state/deploy-status.json
-          git commit -m "Update ${{ github.event.client_payload.component }} deploy status to ${{ github.event.client_payload.status }}" || echo "No changes to commit"
-          git push origin dev
-
-      - name: Check if all components are successful
+      - name: Check if all components deployed successfully
         id: check_all
         run: |
-          FILE=".github/deploy-state/deploy-status.json"
-          STATUS=$(jq -r '[.frontend, .backend, .database] | all(. == "success")' "$FILE")
-          echo "all_success=$STATUS" >> $GITHUB_OUTPUT
+          get_status() {
+            VAR_NAME="DEPLOY_STATUS_$1"
+            curl -s -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/${{ github.repository }}/actions/variables/${VAR_NAME} |
+              jq -r '.value'
+          }
+
+          FRONTEND=$(get_status FRONTEND)
+          BACKEND=$(get_status BACKEND)
+          DATABASE=$(get_status DATABASE)
+
+          echo "Frontend: $FRONTEND, Backend: $BACKEND, Database: $DATABASE"
+
+          if [[ "$FRONTEND" == "success" && "$BACKEND" == "success" && "$DATABASE" == "success" ]]; then
+            echo "all_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "all_success=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Create PR to PRD
         if: steps.check_all.outputs.all_success == 'true'
@@ -67,10 +59,13 @@ jobs:
             --title "Merge DEV → PRD (auto)" \
             --body "All components deployed successfully. This PR was auto-created by GitHub Actions."
 
-      - name: Reset status after PR
+      - name: Reset deployment variables after PR
         if: steps.check_all.outputs.all_success == 'true'
         run: |
-          echo '{"frontend": "", "backend": "", "database": ""}' > .github/deploy-state/deploy-status.json
-          git add .github/deploy-state/deploy-status.json
-          git commit -m "Reset deployment status after PR to PRD"
-          git push origin dev
+          for VAR in FRONTEND BACKEND DATABASE; do
+            curl -X PATCH \
+              -H "Authorization: Bearer ${{ secrets.PAT_TOKEN }}" \
+              -H "Accept: application/vnd.github+json" \
+              https://api.github.com/repos/${{ github.repository }}/actions/variables/DEPLOY_STATUS_$VAR \
+              -d '{"name":"DEPLOY_STATUS_'"$VAR"'","value":""}'
+          done
