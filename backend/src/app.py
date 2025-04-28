@@ -1,15 +1,26 @@
 import os
 import logging
+import os
+import logging
 from flask import Flask
 from flask_cors import CORS
 from src.routes.user_routes import user_bp
 
+# Initialize logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 ENV = os.getenv("ENV", "dev")
+BACKEND_API = os.getenv("BACKEND_API", "http://localhost:3000")
+
+if ENV == "dev":
+    cors_origins = ["http://localhost:3000"]
+else:
+    cors_origins = [BACKEND_API]
 
 app = Flask(__name__)
-CORS(app)
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+
+CORS(app, origins=cors_origins)
 
 app.register_blueprint(user_bp, url_prefix="/api")
 
