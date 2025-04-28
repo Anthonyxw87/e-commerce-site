@@ -49,6 +49,13 @@ jobs:
             echo "all_success=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: Checkout dev branch
+        if: steps.check_all.outputs.all_success == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          token: ${{ secrets.PAT_TOKEN }}
+          
       - name: Create PR to PRD
         if: steps.check_all.outputs.all_success == 'true'
         env:
