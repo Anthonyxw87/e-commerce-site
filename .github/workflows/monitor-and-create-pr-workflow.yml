@@ -76,3 +76,4 @@ jobs:
               https://api.github.com/repos/${{ github.repository }}/actions/variables/DEPLOY_STATUS_$VAR \
               -d '{"name":"DEPLOY_STATUS_'"$VAR"'","value":"reset"}'
           done
+
