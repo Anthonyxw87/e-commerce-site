@@ -8,3 +8,4 @@ backend/src/.python-version
 logs/
 scripts/.env
 db/*.drawio
+.DS_Store
